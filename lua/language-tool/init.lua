@@ -200,13 +200,22 @@ local function load_opts(defaults, custom)
 	return merged
 end
 
-local function get_selected_text()
-	local start_pos = vim.fn.getpos("v")
-	local end_pos = vim.fn.getpos(".")
+function M.get_selected_text()
+	local start_pos = vim.fn.getpos("'<")
+	local end_pos = vim.fn.getpos("'>")
 	local start_line, start_col = start_pos[2] - 1, start_pos[3] - 1
 	local end_line, end_col = end_pos[2] - 1, end_pos[3]
 	local lines = vim.api.nvim_buf_get_text(0, start_line, start_col, end_line, end_col, {})
-	return table.concat(lines, "\n")
+	local text = table.concat(lines, "\n")
+	return text
+end
+
+function M.languagetool_check_in_virtal_mode()
+	local lang = M.opts.default_language
+	local text = M.get_selected_text()
+	M.languagetool_check(lang, text, function(data)
+		vim.notify(vim.inspect(data))
+	end)
 end
 
 function M.setup(opts)
@@ -217,14 +226,15 @@ function M.setup(opts)
 		local text = ""
 		if #event.fargs == 0 then
 			lang = M.opts.default_language
-			text = get_selected_text()
+			text = M.get_selected_text()
 		elseif #event.fargs == 1 then
 			lang = event.fargs[1]
-			text = get_selected_text()
+			text = M.get_selected_text()
 		else
 			lang = event.fargs[1]
 			text = event.fargs[2]
 		end
+		print(lang, text)
 		M.languagetool_check(lang, text, function(data)
 			vim.notify(vim.inspect(data))
 		end)
@@ -232,6 +242,12 @@ function M.setup(opts)
 		nargs = "*",
 		desc = M.opts.words.user_command_check_description,
 	})
+	vim.api.nvim_set_keymap(
+		"v",
+		"<Leader>lt",
+		":lua require('language-tool').languagetool_check_in_virtal_mode()<CR>",
+		{ silent = true }
+	)
 end
 
 return M
