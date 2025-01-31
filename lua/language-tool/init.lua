@@ -224,17 +224,13 @@ function M.setup(opts)
 	vim.api.nvim_create_user_command(M.opts.user_commands.LanguageToolCheck, function(event)
 		local lang = ""
 		local text = ""
-		if #event.fargs == 0 then
-			lang = M.opts.default_language
-			text = M.get_selected_text()
-		elseif #event.fargs == 1 then
-			lang = event.fargs[1]
-			text = M.get_selected_text()
+		if #event.fargs < 2 then
+			vim.notify(M.opts.words.user_command_check_required_args, vim.log.levels.ERROR)
+			return
 		else
 			lang = event.fargs[1]
 			text = event.fargs[2]
 		end
-		print(lang, text)
 		M.languagetool_check(lang, text, function(data)
 			vim.notify(vim.inspect(data))
 		end)
